@@ -1,0 +1,4 @@
+underthesea
+spacy
+torchtext
+torch
