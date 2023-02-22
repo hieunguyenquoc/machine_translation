@@ -6,7 +6,7 @@ from typing import Iterable, List
 class Data_preprocess:
 # We need to modify the URLs for the dataset since the links to the original dataset are broken
 # Refer to https://github.com/pytorch/text/issues/1756#issuecomment-1163664163 for more info
-    def __init__(self):
+    def load_data(self):
         multi30k.URL["train"] = "https://raw.githubusercontent.com/neychev/small_DL_repo/master/datasets/Multi30k/training.tar.gz"
         multi30k.URL["valid"] = "https://raw.githubusercontent.com/neychev/small_DL_repo/master/datasets/Multi30k/validation.tar.gz"
 
@@ -16,7 +16,6 @@ class Data_preprocess:
         # Place-holders
         self.token_transform = {}
         self.vocab_transform = {}
-
 
         # Create source and target language tokenizer. Make sure to install the dependencies.
         # pip install -U torchdata
@@ -39,19 +38,20 @@ class Data_preprocess:
         for data_sample in data_iter:
             yield self.token_transform[language](data_sample[language_index[language]]) #yield : cho phép hàm trả về nhiều giá trị
 
+result = Data_preprocess()
+result.load_data()
+
+for ln in [result.SRC_LANGUAGE, result.TGT_LANGUAGE]:
+    # Training data Iterator
+    train_iter = Multi30k(split='train', language_pair=(result.SRC_LANGUAGE, result.TGT_LANGUAGE))
+    # Create torchtext's Vocab object 
+    result.vocab_transform[ln] = build_vocab_from_iterator(result.yield_tokens(train_iter, ln), #vocab_transfrom[ln] : vocab tương ứng với ngôn ngữ
+                                                    min_freq=1,
+                                                    specials=result.special_symbols,
+                                                    special_first=True)
+
+# Set UNK_IDX as the default index. This index is returned when the token is not found.
+# If not set, it throws RuntimeError when the queried token is not found in the Vocabulary.
+for ln in [result.SRC_LANGUAGE, result.TGT_LANGUAGE]:
+    result.vocab_transform[ln].set_default_index(result.UNK_IDX)
     
-
-    def action(self):
-        for ln in [self.SRC_LANGUAGE, self.TGT_LANGUAGE]:
-            # Training data Iterator
-            train_iter = Multi30k(split='train', language_pair=(self.SRC_LANGUAGE, self.TGT_LANGUAGE))
-            # Create torchtext's Vocab object 
-            self.vocab_transform[ln] = build_vocab_from_iterator(self.yield_tokens(train_iter, ln), #vocab_transfrom[ln] : vocab tương ứng với ngôn ngữ
-                                                            min_freq=1,
-                                                            specials=self.special_symbols,
-                                                            special_first=True)
-
-        # Set UNK_IDX as the default index. This index is returned when the token is not found.
-        # If not set, it throws RuntimeError when the queried token is not found in the Vocabulary.
-        for ln in [self.SRC_LANGUAGE, self.TGT_LANGUAGE]:
-            self.vocab_transform[ln].set_default_index(self.UNK_IDX)

@@ -6,7 +6,7 @@ from model import Seq2SeqTransformer
 torch.manual_seed(0)
 
 class hyper_parameter:
-    def __init__(self):
+    def define(self):
         devices = "cuda" if torch.cuda.is_available() else "cpu"
 
         DEVICE = torch.device(devices)
